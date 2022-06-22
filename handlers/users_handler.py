@@ -45,7 +45,12 @@ class UserHandler():
     def create_user(self, user_id: str) -> None:
         user_id = str(user_id)
         if user_id not in self.userdata:
-            self.userdata[user_id] = {"brand":"", "seller":"", "settings":{}, "BarcodeType": "ean13"}
+            self.userdata[user_id] = {
+                "brand":"", "seller":"", 
+                "settings":{
+                    "BarcodeType": "ean13"
+                }
+            }
             self.save(user_id)
             logging.info(f"NEW USER (id: {user_id}) CREATED")
     
