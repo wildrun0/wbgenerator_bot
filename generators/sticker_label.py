@@ -3,6 +3,7 @@ import textwrap
 import logging
 from io import BytesIO
 from utilities import Utils as utils
+from config import DEFAULT_FONT
 
 from PIL import Image
 from PIL import ImageFont, ImageDraw
@@ -45,7 +46,7 @@ class StickerLabelGenerator():
         )
 
         draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype("arial.ttf", size=self.font_size)
+        font = ImageFont.truetype(DEFAULT_FONT, size=self.font_size)
 
         i = barcode_height
         for k, v in product_params.items():

@@ -6,6 +6,7 @@ env.read_env()
 
 try:
     BOT_TOKEN = env.str("BOT_TOKEN")
+    DEFAULT_FONT = "config/cambria.ttf"
 except:
     logging.critical(".env файл не найден! Создаю новый...")
     logging.critical("Прежде чем использовать бота, необходимо ввести токен в BOT_TOKEN=")
