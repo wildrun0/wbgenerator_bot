@@ -19,7 +19,7 @@ class UserHandler():
             logging.info(f"USER'S (id: {user_id}) folder not found. Creating...")
 
         with open(Path(user_path, f"{user_id}.json"), 'w', encoding="utf-8") as fp:
-            json.dump(self.userdata, fp, indent=4, ensure_ascii=False)
+            json.dump(self.userdata[str(user_id)], fp, indent=4, ensure_ascii=False)
             logging.info(f"USER'S (id: {user_id}) data saved")
 
     def get(self, user_id: str, param:str) -> dict:

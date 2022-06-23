@@ -27,7 +27,10 @@ class StickerLabelGenerator():
                 file.unlink()
         else:
             del self.STICKERS[uid]
-            del self.STICKERS_ALONE[uid]
+            try:
+                del self.STICKERS_ALONE[uid]
+            except:
+                logging.info(f"Can't delete STICKERS_ALONE (id:{uid})")
     def label_create(self, uid: str|int, product_params:dict, barcode_img:BytesIO) -> Path:
         FILENAME = f"label_{product_params['Артикул']}.png"
 
@@ -129,7 +132,7 @@ class StickerLabelGenerator():
                         usercode_pr.add_picture(utils.image2file_bytes(image), width=Cm(4), height=Cm(3))
                         barcode_pr.add_picture(utils.image2file_bytes(barcode_png), width=Cm(4.82))
                         barcode_cell.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    elif image.size[0] == 342:
+                    elif image.size[0] == 342 or image.size[0] == 320:
                         usercode_pr.add_picture(utils.image2file_bytes(image), width=Cm(5.8), height=Cm(4))
                         barcode_pr.add_picture(utils.image2file_bytes(barcode_png), width=Cm(5.82))
                         barcode_cell.alignment = WD_ALIGN_PARAGRAPH.CENTER
