@@ -22,13 +22,12 @@ class StickerLabelGenerator():
         self.SAVE_DIR = f"userdata"
 
     def clear(self, uid: str|int, temp_files: bool = False):
-        del self.STICKERS[uid]
-        del self.STICKERS_ALONE[uid]
-
         if temp_files:
             for file in Path(self.SAVE_DIR, str(uid)).glob("stickers_*"):
                 file.unlink()
-
+        else:
+            del self.STICKERS[uid]
+            del self.STICKERS_ALONE[uid]
     def label_create(self, uid: str|int, product_params:dict, barcode_img:BytesIO) -> Path:
         FILENAME = f"label_{product_params['Артикул']}.png"
 
