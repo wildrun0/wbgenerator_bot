@@ -167,7 +167,7 @@ async def wb_sticker_done(message : types.Message, state: FSMContext):
             )
             await state.finish()
             await message.answer_document(docx, reply_markup=stickers_confirm_done)
-            stickerlabel.clear()
+            stickerlabel.clear(uid)
         except Exception as e:
             await state.update_data(counter=0)
             await state.update_data(photos=[])
