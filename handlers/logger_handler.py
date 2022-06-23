@@ -12,14 +12,14 @@ class CustomFormatter(logging.Formatter):
         red = "\x1b[31;20m"
         bold_red = "\x1b[31;1m"
         reset = "\x1b[0m"
-        self.format = "%(asctime)s - [WB_BOT_TG] - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+        self.format_str = "%(asctime)s - [WB_BOT_TG] - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
 
         self.FORMATS = {
-            logging.DEBUG: grey + self.format + reset,
-            logging.INFO: grey + self.format + reset,
-            logging.WARNING: yellow + self.format + reset,
-            logging.ERROR: red + self.format + reset,
-            logging.CRITICAL: bold_red + self.format + reset
+            logging.DEBUG: grey + self.format_str + reset,
+            logging.INFO: grey + self.format_str + reset,
+            logging.WARNING: yellow + self.format_str + reset,
+            logging.ERROR: red + self.format_str + reset,
+            logging.CRITICAL: bold_red + self.format_str + reset
         }
 
     def format(self, record):
@@ -35,11 +35,16 @@ class LoggingHandler():
         self.default_logs_folder.mkdir(exist_ok=True)
         customformat = CustomFormatter()
         
+        filestream = logging.FileHandler(self.latest_log_path)
+        filestream.setFormatter(
+            logging.Formatter(customformat.format_str)
+        )
+        
         console_stream = logging.StreamHandler()
         console_stream.setFormatter(customformat)
         
-        logging.basicConfig(encoding='utf-8', level=logging.INFO, format=customformat.format, handlers=[
-            logging.FileHandler(self.latest_log_path),
+        logging.basicConfig(encoding='utf-8', level=logging.INFO, handlers=[
+            filestream,
             console_stream
         ])
 
