@@ -1,9 +1,9 @@
-import os
 import textwrap
 import logging
 from io import BytesIO
-from utilities import Utils as utils
+from pathlib import Path
 from config import DEFAULT_FONT
+from utilities import Utils as utils
 
 from PIL import Image
 from PIL import ImageFont, ImageDraw
@@ -19,19 +19,20 @@ class StickerLabelGenerator():
         self.font_size = 16
         self.STICKERS = {}
         self.STICKERS_ALONE = {}
+        self.SAVE_DIR = f"userdata"
 
-    def clear(self, uid: str|int) -> None:
-        for i in os.listdir(f"userdata/{uid}/"):
-            logging.info(f"CLEANING USER'S (id: {uid}) TEMP FILES")
-            if i.startswith("temp_") or i.startswith("stickers_"):
-                os.remove(f"userdata/{uid}/{i}")
+    def clear(self, uid: str|int, temp_files: bool = False):
+        del self.STICKERS[uid]
+        del self.STICKERS_ALONE[uid]
 
-    def label_create(self, uid: str|int, product_params:dict, barcode_img:BytesIO) -> str:
-        SAVE_DIR = f"userdata/{uid}/"
+        if temp_files:
+            for file in Path(self.SAVE_DIR, str(uid)).glob("stickers_*"):
+                file.unlink()
+
+    def label_create(self, uid: str|int, product_params:dict, barcode_img:BytesIO) -> Path:
         FILENAME = f"label_{product_params['Артикул']}.png"
 
         barcode_png = Image.open(barcode_img)
-
         w, h = barcode_png.size
 
         barcode_height = int(self.barcode_width * h / w)
@@ -44,7 +45,12 @@ class StickerLabelGenerator():
             (self.label_width, self.label_height),
             (255, 255, 255)  # White
         )
-
+        img.paste(
+            barcode_png, (
+                (self.label_width - self.barcode_width) // 2,
+                0
+            )
+        )
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype(DEFAULT_FONT, size=self.font_size)
 
@@ -56,23 +62,17 @@ class StickerLabelGenerator():
                 text = '\n'.join(textwrapped)
                 draw.text((offset), text, font=font, fill="black")
                 newlines = text.count("\n")+1
-                i = i+(20*(newlines if newlines > 0 else 1))
+                i = i+(20*(newlines if newlines > 0 else 1)) # отступы ебашим
 
+        savepath = Path(self.SAVE_DIR, str(uid), FILENAME)
         img = img.crop((0,0, self.label_width, i+5))
-        img.paste(
-            barcode_png, (
-                (self.label_width - self.barcode_width) // 2,
-                0
-            )
-        )
-        img.save(os.path.join(SAVE_DIR, FILENAME), quality=100)
+        img.save(savepath, quality=100)
         logging.info(f"USER'S (id: {uid}) NEW LABEL CREATED")
-        return (SAVE_DIR+FILENAME)
 
-    def sticker_add(self, uid: str|int, user_code_png: str, should_double:bool = False) -> None:
-        SAVE_DIR = f"userdata/{uid}/"
-        user_CodePng = Image.open(SAVE_DIR+user_code_png)
+        return savepath
 
+    def sticker_add(self, uid: str|int, user_code_png: BytesIO, should_double:bool = False) -> None:
+        user_CodePng = Image.open(user_code_png)
         try:
             self.STICKERS[uid].append([user_CodePng])
         except KeyError:
@@ -84,7 +84,7 @@ class StickerLabelGenerator():
             except KeyError:
                 self.STICKERS_ALONE[uid] = 1
 
-    def complete_file(self, uid: str|int, articul:str) -> str:
+    def complete_file(self, uid: str|int, articul:str) -> Path:
         logging.info(f"USER (id: {uid}) GENERATING STICKERS")
         document = Document()
         sections = document.sections
@@ -98,15 +98,14 @@ class StickerLabelGenerator():
         descriptions = False
         
         if uid in self.STICKERS_ALONE:
-            rows += self.STICKERS_ALONE[uid]
-            descriptions = self.STICKERS_ALONE[uid] // 2
+            rows += self.STICKERS_ALONE[uid] // 2
+            descriptions = self.STICKERS_ALONE[uid]
     
         if rows == 1:   # а хули оно ломается
             rows = 2
         table = document.add_table(rows=rows, cols=3)
     
-        SAVE_DIR = f"userdata/{uid}/"
-        barcode_png = Image.open(f"{SAVE_DIR}label_{articul}.png")
+        barcode_png = Image.open(Path(self.SAVE_DIR, str(uid), f"label_{articul}.png"))
 
         # ниже пиздец который отнял пол жизни
         # за такой код убивают.............................
@@ -140,33 +139,38 @@ class StickerLabelGenerator():
                     usercode_cell.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 del bills[enum1]
                 column += 1
-        del self.STICKERS[uid]
         # А ТУТ добавляем маркировки товаров (описание) без клиентских штрихов если попросили...
+        state1 = True # это единственный адекватный вариант который я придумал
         if descriptions:
             while descriptions > 0:
                 if column == 3:# (ну типа по три колонки или хз):
                     column = 0
                     row += 2
-
-                row_cells = table.rows[row].cells
-                barcode_cell_first = row_cells[column].paragraphs[0]
-                barcode_pr_first = barcode_cell_first.add_run()
-
-                row_cells = table.rows[row+1].cells
-                barcode_cell_second = row_cells[column].paragraphs[0]
-                barcode_pr_second = barcode_cell_second.add_run()
-                
-                barcode_pr_second.add_picture(utils.image2file_bytes(barcode_png), width=Cm(5.82))
-                barcode_pr_first.add_picture(utils.image2file_bytes(barcode_png), width=Cm(5.82))
-
-                barcode_cell_first.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                barcode_cell_second.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                if state1:
+                    row_cells = table.rows[row].cells
+                    barcode_cell_first = row_cells[column].paragraphs[0]
+                    barcode_pr_first = barcode_cell_first.add_run()
+                    
+                    barcode_pr_first.add_picture(utils.image2file_bytes(barcode_png), width=Cm(5.82))
+                    state1 = False
+                    barcode_cell_first.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                else:
+                    row_cells = table.rows[row+1].cells
+                    barcode_cell_second = row_cells[column].paragraphs[0]
+                    barcode_pr_second = barcode_cell_second.add_run()
+                    
+                    barcode_pr_second.add_picture(utils.image2file_bytes(barcode_png), width=Cm(5.82))
+                    barcode_cell_second.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    state1 = True
+                    column += 1
 
                 descriptions -= 1
-                column += 1
-            del self.STICKERS_ALONE[uid]
-
-        filepath = f"userdata/{uid}/stickers_{utils.uuid_gen()}.docx"
+        filename = f"stickers_{utils.uuid_gen()}.docx"
+        filepath = Path(self.SAVE_DIR, str(uid), filename)
+        
         document.save(filepath)
         logging.info(f"USER (id: {uid}) GENERATED STICKERS SUCCESSFULLY")
-        return filepath
+        try:
+            return filepath
+        finally:
+            self.clear(uid)

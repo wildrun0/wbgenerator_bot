@@ -1,26 +1,24 @@
-import os
 import json
 import logging
+from pathlib import Path
 
 class UserHandler():
     def __init__(self):
-        self.DIR = "userdata"
-        if not os.path.exists(self.DIR):
-            os.mkdir(self.DIR)
-            logging.info("FOLDER {userdata} not found. Creating...")
+        self.DIR = Path("userdata")
+        self.DIR.mkdir(exist_ok=True)
 
         self.userdata = {}
-        for uid in os.listdir(self.DIR):
-            with open(f"{self.DIR}/{uid}/{uid}.json", "r", encoding="utf-8") as userfile:
+        for uid in self.DIR.rglob("*.json"):
+            with uid.open("r", encoding="utf-8") as userfile:
                 self.userdata = json.load(userfile)
 
     def save(self, user_id: str) -> None:
-        user_path = f"{self.DIR}/{user_id}"
-        if not os.path.exists(user_path):
-            os.mkdir(user_path)
+        user_path = Path(self.DIR, str(user_id))
+        if not user_path.exists():
+            user_path.mkdir()
             logging.info(f"USER'S (id: {user_id}) folder not found. Creating...")
 
-        with open(f'{user_path}/{user_id}.json', 'w', encoding="utf-8") as fp:
+        with open(Path(user_path, f"{user_id}.json"), 'w', encoding="utf-8") as fp:
             json.dump(self.userdata, fp, indent=4, ensure_ascii=False)
             logging.info(f"USER'S (id: {user_id}) data saved")
 
@@ -82,10 +80,7 @@ class UserHandler():
     
     def settings_add(self, user_id: str, key: str, value: str) -> None:
         user_id = str(user_id)
-        try:
-            self.userdata[user_id]["settings"][key] = value
-        except KeyError:
-            self.userdata[user_id].setdefault("settings", {key: value})
+        self.userdata[user_id]["settings"][key] = value
         self.save(user_id)
     
     def settings_get(self, user_id: str, key: str) -> dict:

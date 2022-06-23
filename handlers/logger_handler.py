@@ -2,6 +2,7 @@ import os
 import shutil
 import logging
 import asyncio
+from pathlib import Path
 from datetime import datetime
 
 class CustomFormatter(logging.Formatter):
@@ -28,32 +29,31 @@ class CustomFormatter(logging.Formatter):
 class LoggingHandler():
     def __init__(self):
         self.default_log_name = "latest.log"
+        self.default_logs_folder = Path("logs")
+        self.latest_log_path = Path(self.default_logs_folder, self.default_log_name)
+        self.default_logs_folder.mkdir(exist_ok=True)
+        
         console_stream = logging.StreamHandler()
         console_stream.setFormatter(CustomFormatter())
+        
         logging.basicConfig(encoding='utf-8', level=logging.INFO, handlers=[
-            logging.FileHandler(self.default_log_name),
+            logging.FileHandler(self.latest_log_path),
             console_stream
         ])
 
-    def clean_log_file(self) -> None:
-        open(self.default_log_name, "w").close()
-
-    async def relocate_loggs(self, sleep_time) -> None:
+    async def relocate_logs(self, sleep_time: int = 3600) -> None:
         while 1:
-            await asyncio.sleep(sleep_time)
             dt = datetime.now()
-            if dt.hour == 0 and dt.minute == 0:
-                logging.info("latest.log was moved to logs/")
+            if dt.hour == 0:
+                logging.warning("latest.log was renewed")
                 date_string = dt.strftime('%d-%m-%Y')
-                filelog_name = f"log{date_string}.txt"
-                destination = f"logs/{filelog_name}"
                 
-                if not os.path.exists("logs"):
-                    os.mkdir("logs")
+                filelog_name = f"{date_string}.log.txt"
                     
                 if os.name == "posix":
-                    os.replace(self.default_log_name, destination)
-                else:
-                    shutil.copy(self.default_log_name, destination)
+                    self.latest_log_path.rename(filelog_name)
+                else: #windows не даст удалить (переименовать) файл пока он открыт у нас
+                    shutil.copy(self.latest_log_path, Path(self.default_logs_folder, filelog_name))
                     
-                self.clean_log_file()
+                self.latest_log_path.write_text("")
+            await asyncio.sleep(sleep_time)

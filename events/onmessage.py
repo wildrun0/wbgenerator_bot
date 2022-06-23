@@ -1,4 +1,6 @@
-import os
+import logging
+import traceback
+from io import BytesIO
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import UserAddStates, ProductAddStates, StickerCreateStates
@@ -129,7 +131,7 @@ async def wb_sticker_product(callback: types.CallbackQuery, state: FSMContext):
 async def wb_sticker_additional(message: types.Message, state: FSMContext):
     product_name = await state.get_data()
     await state.update_data(double=(True if message.text == "✅Да" else False))
-    await state.update_data(counter=0)
+    await state.update_data(photos=[])
     await StickerCreateStates.next()
 
     await message.answer((
@@ -142,39 +144,38 @@ async def wb_sticker_additional(message: types.Message, state: FSMContext):
     
 @dp.message_handler(content_types=['photo'], state=StickerCreateStates.waiting_for_screens)
 async def wb_sticker_screens(message : types.Message, state: FSMContext):
-    product_data = await state.get_data()
-    uid = message.from_user.id
-    filename = f"temp_{product_data['articul']}_{message.photo[-1].file_unique_id}.png"
-    await state.update_data(counter=product_data['counter']+1)
-    await message.photo[-1].download(
-        destination_file=f"userdata/{uid}/{filename}"
-    )
+    async with state.proxy() as data:
+        data["photos"] = [*data["photos"], message.photo[-1]]
 
 @dp.message_handler(text="⏭️Продолжить", state=StickerCreateStates.waiting_for_screens)
 async def wb_sticker_done(message : types.Message, state: FSMContext):
     product = await state.get_data()
-    if product["counter"] > 0:
+    if len(product["photos"]) > 0:
         uid = message.from_user.id
-        product_info= uh.get_product(uid, product["articul"])
         await message.answer("Генерирую изображения, подождите...")
 
-        for files in os.listdir(f"userdata/{uid}/"): 
-            if files.startswith("temp_"):
-                stickerlabel.sticker_add(uid, files, product['double'])
+        for photo in product["photos"]:
+            byte_photo = BytesIO()
+            await photo.download(
+                destination_file = byte_photo
+            )
+            stickerlabel.sticker_add(uid, byte_photo, product['double'])
         try:
-            docx = types.InputFile(stickerlabel.complete_file(uid, product_info['Артикул']))
+            docx = types.InputFile(stickerlabel.complete_file(uid, product["articul"]))
             await message.answer(
-                f"🎉Готово! По вашему запросу сгенерировано <u>{product['counter']}</u> этикеток(-а)"
+                f"🎉Готово! По вашему запросу сгенерировано <u>{len(product['photos'])}</u> этикеток(-а)"
             )
             await state.finish()
             await message.answer_document(docx, reply_markup=stickers_confirm_done)
+            stickerlabel.clear()
         except Exception as e:
             await state.update_data(counter=0)
+            await state.update_data(photos=[])
             await message.answer((
                 "Произошла ошибка при создании этикеток!\n"
                 f"Ошибка: <b>{e}</b>"
             ))
-        stickerlabel.clear(uid) # чистим кэш
+            logging.critical(traceback.format_exc())
     else:
         await message.answer("Вы не добавили штрихкоды!")
 

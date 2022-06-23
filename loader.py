@@ -9,7 +9,7 @@ bot = Bot(BOT_TOKEN, parse_mode="HTML")
 '''
 Хитрый мув (дефолтный): Чтобы воткнуть бота и (например) logginghandler в один луп - 
 создаем _сами_ предварительно луп и в него уже пихаем и бота, и то что нужно
-В нашем случае - lh.relocate_loggs в app.py
+В нашем случае - lh.relocate_logs в app.py
 Иначе - никак, нельзя "встроится" в луп бота как это есть в vkbottle
 '''
 loop = asyncio.get_event_loop()
