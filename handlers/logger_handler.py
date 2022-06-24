@@ -56,11 +56,12 @@ class LoggingHandler():
                 date_string = dt.strftime('%d-%m-%Y')
                 
                 filelog_name = f"{date_string}.log.txt"
+                new_log_path = Path(self.default_logs_folder, filelog_name)
                     
                 if os.name == "posix":
-                    self.latest_log_path.rename(filelog_name)
+                    self.latest_log_path.rename(new_log_path)
                 else: #windows не даст удалить (переименовать) файл пока он открыт у нас
-                    shutil.copy(self.latest_log_path, Path(self.default_logs_folder, filelog_name))
+                    shutil.copy(self.latest_log_path, new_log_path)
                     
                 self.latest_log_path.write_text("")
             await asyncio.sleep(sleep_time)
