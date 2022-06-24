@@ -12,6 +12,7 @@ class UserHandler():
             with uid.open("r", encoding="utf-8") as userfile:
                 self.userdata[uid.stem] = json.load(userfile)
 
+
     def save(self, user_id: str) -> None:
         user_path = Path(self.DIR, str(user_id))
         if not user_path.exists():
@@ -22,11 +23,13 @@ class UserHandler():
             json.dump(self.userdata[str(user_id)], fp, indent=4, ensure_ascii=False)
             logging.info(f"USER'S (id: {user_id}) data saved")
 
+
     def get(self, user_id: str, param:str) -> dict:
         try:
             return self.userdata[str(user_id)][param]
         except:
             return {}
+
 
     def get_product(self, user_id: str, product_articul:str) -> dict:
         try:
@@ -34,11 +37,13 @@ class UserHandler():
         except:
             return {}
     
+
     def get_products(self, user_id: str) -> dict:
         try:
             return self.userdata[str(user_id)]["products"]
         except:
             return {}
+
 
     def create_user(self, user_id: str) -> None:
         user_id = str(user_id)
@@ -52,12 +57,14 @@ class UserHandler():
             self.save(user_id)
             logging.info(f"NEW USER (id: {user_id}) CREATED")
     
+
     def add_dict(self, user_id: str, dict_slice:dict) -> None:
         user_id = str(user_id)
         for k, v in dict_slice.items():
             self.userdata[user_id][k] = v
         self.save(user_id)
     
+
     def product_set(self, user_id: str, product_articul:str, product_info: dict) -> None:
         user_id = str(user_id)
         try:
@@ -66,6 +73,7 @@ class UserHandler():
             self.userdata[user_id].setdefault("products", {product_articul: product_info})
         self.save(user_id)
 
+
     def product_add(self, user_id: str, product_articul:str, key:str, value: str) -> None:
         user_id = str(user_id)
         if product_articul in self.userdata[user_id]["products"]:
@@ -73,15 +81,18 @@ class UserHandler():
         else:
             self.product_set(user_id, product_articul, {key: value})
     
+
     def product_del(self, user_id: str, key) -> None:
         user_id = str(user_id)
         del self.userdata[user_id]["products"][key]
         self.save(user_id)
     
+
     def settings_add(self, user_id: str, key: str, value: str) -> None:
         user_id = str(user_id)
         self.userdata[user_id]["settings"][key] = value
         self.save(user_id)
+    
     
     def settings_get(self, user_id: str, key: str) -> dict:
         user_id = str(user_id)

@@ -11,6 +11,7 @@ from loader import userhandler as uh
 from loader import bargenerator as bargen
 from loader import stickerlabelgenerator as stickerlabel
 
+
 @dp.message_handler(commands="start")
 async def on_start(message: types.Message):
     uid = message.from_user.id
@@ -21,6 +22,7 @@ async def on_start(message: types.Message):
         "Для начала, заполни информацию о своем бренде👇"
     ), reply_markup=fill_brand_info_btn) 
 
+
 @dp.callback_query_handler(text="ProductsADD")
 async def add_brand(callback : types.CallbackQuery):
     await callback.message.answer((
@@ -28,6 +30,7 @@ async def add_brand(callback : types.CallbackQuery):
         "Введи название:"
     ))
     await UserAddStates.waiting_for_brand_name.set()
+
 
 @dp.message_handler(state=UserAddStates.waiting_for_brand_name)
 async def brand_setted(message: types.Message, state: FSMContext):
@@ -48,6 +51,7 @@ async def brand_setted(message: types.Message, state: FSMContext):
         ))
         await UserAddStates.next()
 
+
 @dp.message_handler(state=UserAddStates.waiting_for_seller_name)
 async def brand_setted(message: types.Message, state: FSMContext):
     await state.update_data(seller=message.text)
@@ -59,16 +63,19 @@ async def brand_setted(message: types.Message, state: FSMContext):
     ), reply_markup=fill_brand_done)
     await UserAddStates.next()
 
+
 @dp.callback_query_handler(state=UserAddStates.waiting_for_confirm, text="ChangeBrand")
 async def setting_done(callback : types.CallbackQuery):
     await UserAddStates.waiting_for_brand_name.set()
     await callback.message.answer("Введите новое название бренда:")
 
+
 @dp.callback_query_handler(state=UserAddStates.waiting_for_confirm, text="ChangeSeller")
 async def setting_done(callback : types.CallbackQuery):
     await UserAddStates.waiting_for_seller_name.set()
     await callback.message.answer("Введите нового продавца:")
-    
+
+
 @dp.message_handler(state="*", text="⏪Выйти в меню")
 async def wb_home(message : types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -82,7 +89,8 @@ async def wb_home(message : types.Message, state: FSMContext):
     await message.answer((
         "Главное меню бота"
     ), reply_markup = home_keyboard)
-    
+
+
 @dp.callback_query_handler(state=UserAddStates.waiting_for_confirm, text="ChangeDone")
 async def setting_done(callback : types.CallbackQuery, state: FSMContext):
     brand_data = await state.get_data()
@@ -94,6 +102,7 @@ async def setting_done(callback : types.CallbackQuery, state: FSMContext):
 
     uh.add_dict(uid, brand_data)
     await state.finish()
+
 
 @dp.message_handler(text = "➡️Создать наклейки")
 async def wb_createSticker(message : types.Message):
@@ -114,6 +123,7 @@ async def wb_createSticker(message : types.Message):
         await message.answer("Выберите товар(артикул), для которого создаем этикетку:", reply_markup=keyboard)
         await StickerCreateStates.waiting_for_product.set()
 
+
 @dp.callback_query_handler(state=StickerCreateStates.waiting_for_product)
 async def wb_sticker_product(callback: types.CallbackQuery, state: FSMContext):
     product = callback.data.replace("WBSticker_create:","")
@@ -126,6 +136,7 @@ async def wb_sticker_product(callback: types.CallbackQuery, state: FSMContext):
         f"Выбран товар: <b>{product_name}</b>\n"
         "Нужно продублировать в документе маркировки товара (без штрихкодов клиентов)?"
     ), reply_markup=yes_no_kb)
+
 
 @dp.message_handler(text=["✅Да", "🚫Нет"], state=StickerCreateStates.waiting_for_confirm)
 async def wb_sticker_additional(message: types.Message, state: FSMContext):
@@ -141,11 +152,13 @@ async def wb_sticker_additional(message: types.Message, state: FSMContext):
         "<u>Важно!</u> Используйте этикетки <u><b>50х40</b></u>. Размеры меньше получатся мелковатыми\n"
         "После того как загрузите, нажмите на кнопку 'Продолжить'"
     ), reply_markup=stickers_confirm_kb)
-    
+
+
 @dp.message_handler(content_types=['photo'], state=StickerCreateStates.waiting_for_screens)
 async def wb_sticker_screens(message : types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["photos"] = [*data["photos"], message.photo[-1]]
+
 
 @dp.message_handler(text="⏭️Продолжить", state=StickerCreateStates.waiting_for_screens)
 async def wb_sticker_done(message : types.Message, state: FSMContext):
@@ -179,6 +192,7 @@ async def wb_sticker_done(message : types.Message, state: FSMContext):
     else:
         await message.answer("Вы не добавили штрихкоды!")
 
+
 @dp.message_handler(text = "ℹ️Моя информация")
 async def wb_info(message : types.Message):
     wb_userinfo_brand = uh.get(message.from_user.id, "brand")
@@ -192,6 +206,7 @@ async def wb_info(message : types.Message):
         f"Количество добавленных товаров: {wb_userinfo_products}"
     ))
 
+
 @dp.message_handler(text = "✏️Добавить товары")
 async def wb_addProduct(message : types.Message):
     await ProductAddStates.waiting_product_name.set()
@@ -199,7 +214,8 @@ async def wb_addProduct(message : types.Message):
         "⚠️Внимание! Вы перешли в режим добавления товара!🚧\n"
         "Введите наименование товара:"
     ), reply_markup=menu_keyboard)
-    
+
+
 @dp.message_handler(state=ProductAddStates.waiting_product_name)
 async def wb_product_name(message : types.Message, state: FSMContext):
     await state.update_data(name=message.text)
@@ -210,6 +226,7 @@ async def wb_product_name(message : types.Message, state: FSMContext):
         """(длиной не более 20 символов, содержащий):
         • исключительно английские или русские буквы, цифры и символы: / * - + @ № % & $ ! = ( ) { } [ ]"""
     ))
+
 
 @dp.message_handler(state=ProductAddStates.waiting_product_barcode)
 async def wb_product_barcode(message : types.Message, state: FSMContext):
@@ -235,6 +252,7 @@ async def wb_product_barcode(message : types.Message, state: FSMContext):
                 f"Неправильно указан штрихкод!\n"
                 f"Текст ошибки: <b>{e}</b>"
             ))
+
 
 @dp.message_handler(state=ProductAddStates.waiting_product_articul)
 async def wb_product_articul(message : types.Message, state: FSMContext):
@@ -266,6 +284,7 @@ async def wb_product_articul(message : types.Message, state: FSMContext):
             "После завершения нажмите на кнопку 'Завершить':)"
         ), reply_markup=product_add_done)
 
+
 @dp.message_handler(regexp="^[^:]*:[^:]*$", state=ProductAddStates.waiting_product_additional)
 async def wb_product_additional(message: types.Message, state: FSMContext):
     brand_data = await state.get_data()
@@ -282,6 +301,7 @@ async def wb_product_additional(message: types.Message, state: FSMContext):
                 product_value += f"{k}: {v}\n"
         product_value += "\nЧтобы выйти, воспользуйтесь кнопками в клавиатуре"
         await message.answer(product_value)
+
 
 @dp.message_handler(text="✅Завершить", state=ProductAddStates.waiting_product_additional)
 async def wb_product_done(message: types.Message, state: FSMContext):

@@ -22,6 +22,7 @@ class CustomFormatter(logging.Formatter):
             logging.CRITICAL: bold_red + self.format_str + reset
         }
 
+
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
@@ -47,6 +48,7 @@ class LoggingHandler():
             filestream,
             console_stream
         ])
+
 
     async def relocate_logs(self, sleep_time: int = 3600) -> None:
         while 1:

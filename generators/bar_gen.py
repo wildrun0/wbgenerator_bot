@@ -8,6 +8,7 @@ class BarcodeGenerator():
         self.options = {}
         self.user_setting = users_settings
         
+        
     def create(self, uid:str, users_barcode: str) -> BytesIO:
         if len(users_barcode) > 13:
             self.options = {

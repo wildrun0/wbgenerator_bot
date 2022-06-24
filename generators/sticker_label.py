@@ -21,6 +21,7 @@ class StickerLabelGenerator():
         self.STICKERS_ALONE = {}
         self.SAVE_DIR = f"userdata"
 
+
     def clear(self, uid: str|int, temp_files: bool = False):
         if temp_files:
             for file in Path(self.SAVE_DIR, str(uid)).glob("stickers_*"):
@@ -31,6 +32,8 @@ class StickerLabelGenerator():
                 del self.STICKERS_ALONE[uid]
             except:
                 logging.info(f"Can't delete STICKERS_ALONE (id:{uid})")
+
+
     def label_create(self, uid: str|int, product_params:dict, barcode_img:BytesIO) -> Path:
         FILENAME = f"label_{product_params['Артикул']}.png"
 
@@ -73,6 +76,7 @@ class StickerLabelGenerator():
 
         return savepath
 
+
     def sticker_add(self, uid: str|int, user_code_png: BytesIO, should_double:bool = False) -> None:
         user_CodePng = Image.open(user_code_png)
         try:
@@ -85,6 +89,7 @@ class StickerLabelGenerator():
                 self.STICKERS_ALONE[uid] += 1
             except KeyError:
                 self.STICKERS_ALONE[uid] = 1
+
 
     def complete_file(self, uid: str|int, articul:str) -> Path:
         logging.info(f"USER (id: {uid}) GENERATING STICKERS")
