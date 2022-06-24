@@ -10,7 +10,7 @@ class UserHandler():
         self.userdata = {}
         for uid in self.DIR.rglob("*.json"):
             with uid.open("r", encoding="utf-8") as userfile:
-                self.userdata = json.load(userfile)
+                self.userdata[uid.stem] = json.load(userfile)
 
     def save(self, user_id: str) -> None:
         user_path = Path(self.DIR, str(user_id))
