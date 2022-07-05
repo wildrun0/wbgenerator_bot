@@ -6,13 +6,13 @@ from pathlib import Path
 from datetime import datetime
 
 class CustomFormatter(logging.Formatter):
-    def __init__(self):
+    def __init__(self, name):
         grey = "\x1b[38;20m"
         yellow = "\x1b[33;20m"
         red = "\x1b[31;20m"
         bold_red = "\x1b[31;1m"
         reset = "\x1b[0m"
-        self.format_str = "%(asctime)s - [WB_BOT_TG] - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+        self.format_str = f"%(asctime)s - [{name}] - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
 
         self.FORMATS = {
             logging.DEBUG: grey + self.format_str + reset,
@@ -29,12 +29,12 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 class LoggingHandler():
-    def __init__(self):
+    def __init__(self, name):
         self.default_log_name = "latest.log"
         self.default_logs_folder = Path("logs")
         self.latest_log_path = Path(self.default_logs_folder, self.default_log_name)
         self.default_logs_folder.mkdir(exist_ok=True)
-        customformat = CustomFormatter()
+        customformat = CustomFormatter(name)
         
         filestream = logging.FileHandler(self.latest_log_path)
         filestream.setFormatter(
