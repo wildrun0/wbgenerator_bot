@@ -1,9 +1,6 @@
-import os
-import shutil
 import logging
-import asyncio
 from pathlib import Path
-from datetime import datetime
+import logging.handlers as handlers
 
 class CustomFormatter(logging.Formatter):
     def __init__(self, name):
@@ -30,13 +27,14 @@ class CustomFormatter(logging.Formatter):
 
 class LoggingHandler():
     def __init__(self, name):
-        self.default_log_name = "latest.log"
+        self.default_log_name = f"{name}.log"
         self.default_logs_folder = Path("logs")
         self.latest_log_path = Path(self.default_logs_folder, self.default_log_name)
         self.default_logs_folder.mkdir(exist_ok=True)
         customformat = CustomFormatter(name)
         
-        filestream = logging.FileHandler(self.latest_log_path)
+        filestream = handlers.TimedRotatingFileHandler(self.latest_log_path, when="midnight", interval=1, encoding="utf8")
+        filestream.suffix = "%Y-%m-%d"
         filestream.setFormatter(
             logging.Formatter(customformat.format_str)
         )
@@ -48,22 +46,3 @@ class LoggingHandler():
             filestream,
             console_stream
         ])
-
-
-    async def relocate_logs(self, sleep_time: int = 3600) -> None:
-        while 1:
-            dt = datetime.now()
-            if dt.hour == 0:
-                logging.warning("latest.log was renewed")
-                date_string = dt.strftime('%d-%m-%Y')
-                
-                filelog_name = f"{date_string}.log.txt"
-                new_log_path = Path(self.default_logs_folder, filelog_name)
-                    
-                if os.name == "posix":
-                    self.latest_log_path.rename(new_log_path)
-                else: #windows не даст удалить (переименовать) файл пока он открыт у нас
-                    shutil.copy(self.latest_log_path, new_log_path)
-                    
-                self.latest_log_path.write_text("")
-            await asyncio.sleep(sleep_time)
